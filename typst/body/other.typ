@@ -1,0 +1,5 @@
+#import "../hust-thesis.typ": *
+
+#hust-chapter[other]
+
+可包括详细的公式推导、实验数据、计算程序、援引他人的原始资料、数据及其设备条件等。

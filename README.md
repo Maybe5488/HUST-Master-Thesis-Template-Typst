@@ -1,3 +1,6 @@
+# 由于受不了latex编译速度，想着能不能在typst上实现论文的模板，参考了一些开源的项目，全程codex实现
+---
+
 # 华中科技大学硕士论文 Typst 版
 
 这是当前 LaTeX 工程的可编辑 Typst 移植。原有 `.tex`、`.cls`、`.sty`、`.bib`、字体和 `main.pdf` 均保留。Typst 相关文件集中在 `typst-template/`，入口为此目录下的 `main.typ`，已在 Typst 0.15.1 上编译验证。字体与参考文献各保留一份副本，因此可以单独复制此文件夹进行编译。

@@ -4,6 +4,8 @@
 
 支持中英文封面、声明页、中英文摘要、目录、正文、参考文献和附录。主编译入口为 **[`main.typ`](main.typ)**，普通编译无需 LaTeX、Pandoc 或在线 Typst 包。
 
+项目起因是希望缩短 LaTeX 编译等待时间，尝试用 Typst 实现论文模板。实现过程中参考了开源项目，迁移、排版校准与验证使用 Codex 完成。
+
 [草稿 PDF](main-typst.pdf) · [终稿 PDF](main-typst-final.pdf) · [格式核验记录](FORMAT-AUDIT.md)
 
 ## 快速开始

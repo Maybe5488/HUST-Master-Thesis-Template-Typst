@@ -18,6 +18,7 @@
 #let hust-equation-number(..n) = context "(" + str(chapter-num()) + (if appendix-mode.get() { "-" } else { "." }) + str(n.pos().first()) + ")"
 #let hust-algorithm-number(..n) = context str(chapter-num()) + "-" + str(n.pos().first())
 #let reset-chapter-counters() = {
+  counter(footnote).update(0)
   counter(math.equation).update(0)
   counter(figure.where(kind: image)).update(0)
   counter(figure.where(kind: table)).update(0)
@@ -60,46 +61,55 @@
 #let hust-header-red = rgb("#ff0000")
 #let hust-header() = {
   set par(first-line-indent: 0pt, leading: 0pt, spacing: 0pt)
-  align(center, text(font: "STKaiti", size: 16.5pt,
+  // Retain Word's header face and literal spaces; use the LaTeX 0.8em
+  // inter-character distance. Fixed space boxes avoid show-rule tracking loss.
+  align(center, text(font: "STKaiti", size: 16.5 * texpt,
     weight: "bold", fill: hust-header-red,
-    stroke: (paint: hust-header-red, thickness: 0.0225 * 16.5pt),
-    tracking: 1pt)[华 中  科  技  大  学  硕  士  学  位  论  文])
+    stroke: (paint: hust-header-red, thickness: 0.0225 * 16.5pt))[
+    #for (i, char) in "华中科技大学硕士学位论文".clusters().enumerate() {
+      if i > 0 { box(width: 0.8em)[ ] }
+      char
+    }
+  ])
   v(8 * texpt)
-  // Word's 3pt compound double line: 1pt line, 1pt gap, 1pt line.
-  move(dx: -4mm, block(width: 104%, height: 3pt)[
-    #place(top, line(length: 100%, stroke: (paint: hust-header-red, thickness: 1pt)))
-    #place(top, dy: 2pt, line(length: 100%, stroke: (paint: hust-header-red, thickness: 1pt)))
+  // HUSTthesis.cls: 0.4 TeX pt rules, separated by 1 TeX pt.
+  move(dx: -4mm, block(width: 104%, height: 1.8 * texpt)[
+    #place(top, line(length: 100%, stroke: (paint: hust-header-red, thickness: 0.4 * texpt)))
+    #place(top, dy: 1.4 * texpt, line(length: 100%, stroke: (paint: hust-header-red, thickness: 0.4 * texpt)))
   ])
 }
 #let hust-footer(final: false) = context {
   set par(first-line-indent: 0pt, leading: 0pt, spacing: 0pt)
   if not final {
-    move(dx: -4mm, line(length: 104%, stroke: 0.4 * texpt))
-    v(3pt)
+    move(dx: -4mm, line(length: 104%, stroke: (paint: hust-header-red, thickness: 0.4 * texpt)))
+    v(5.34pt)
   }
   align(center, text(size: 10.5 * texpt, counter(page).display()))
 }
 #let hust-thesis(final: false, body) = {
   set document(title: "硕士学位论文")
   set text(font: song, size: 12 * texpt, lang: "zh", region: "CN", cjk-latin-spacing: auto, top-edge: 0.88em, bottom-edge: 0.12em)
-  // Typst paragraph spacing measures the gap between glyph boxes; 13pt
-  // compensates for SimSun metrics to reproduce the 23.5pt TeX baseline.
-  set par(justify: true, first-line-indent: (amount: 2em, all: true), spacing: 13 * texpt,
-    leading: 13 * texpt)
+  // With the 0.88em glyph box, 12.94 TeX pt of gap gives exactly
+  // the LaTeX 23.5 TeX pt baseline (0.88 * 12 + 12.94 = 23.5).
+  set par(justify: true, first-line-indent: (amount: 2em, all: true), spacing: 12.94 * texpt,
+    leading: 12.94 * texpt)
   set page(paper: "a4", margin: (left: 2.8cm, right: 2.8cm, top: 4.4cm, bottom: 3.4cm),
     header: if final { none } else { hust-header() }, header-ascent: 5mm,
-    footer: hust-footer(final: final), footer-descent: 1.8cm,
+    footer: hust-footer(final: final), footer-descent: 1.8cm - 14.55pt,
     numbering: "1")
   set heading(numbering: "1.1", supplement: none)
   show heading: it => context {
     let level = it.level
     let size = (16, 14, 13, 12).at(calc.min(level - 1, 3)) * texpt
-    let before = (15.5, 10, 7, 16).at(calc.min(level - 1, 3)) * 1pt
-    let after = (15, 7, 4, 6).at(calc.min(level - 1, 3)) * 1pt
+    let before = if level == 1 and appendix-mode.get() { 24pt }
+      else { (15.5, 10, 7, 16).at(calc.min(level - 1, 3)) * 1pt }
+    let after = if level == 1 and appendix-mode.get() { 20pt }
+      else if level == 1 and it.numbering == none { 14pt }
+      else { (15, 7, 4, 6).at(calc.min(level - 1, 3)) * 1pt }
     block(width: 100%, above: 0pt, below: 0pt, sticky: true)[
       #v(before, weak: false)
       #set text(font: hei, size: size, weight: if level <= 3 and not (level == 1 and appendix-mode.get()) { "bold" } else { "regular" })
-      #set par(first-line-indent: 0pt, leading: if level == 1 { 0pt } else { 0.5em })
+      #set par(first-line-indent: 0pt, leading: if level == 1 { 0.12em } else { 0.62em })
       #let contents = context {
         if it.numbering != none {
           if appendix-mode.get() and level == 1 { [附录~] }
@@ -126,6 +136,8 @@
   show math.equation: set text(font: ("New Computer Modern Math", "SimSun"), weight: 400, stroke: none)
   show math.equation.where(block: true): set block(above: 10pt, below: 10pt, breakable: false)
   set figure(numbering: hust-number, supplement: [图], gap: 12pt)
+  // LaTeX intextsep = 0.7 baselineskip; belowcaptionskip = 12bp.
+  show figure: set block(above: 0.7 * 23.5 * texpt, below: 12pt + 0.7 * 23.5 * texpt)
   show figure.caption: set text(size: 11 * texpt)
   show figure.caption: set par(first-line-indent: 0pt)
   show figure.where(kind: table): set figure(supplement: [表])
@@ -157,10 +169,16 @@
   set enum(numbering: "(1)", indent: 2em, body-indent: 0.3em, spacing: 11.5 * texpt, tight: false)
   set table(inset: 5pt)
   show table: set text(size: 11 * texpt)
+  show table: set par(first-line-indent: 0pt, leading: 0.52em)
+  // The class comment says "perpage", but the active code follows the
+  // book class counter: circled numbers reset on a new chapter.
   set footnote(numbering: "①")
+  set footnote.entry(separator: line(length: 30%, stroke: 0.4 * texpt))
   show footnote.entry: set text(size: 9 * texpt)
+  show footnote.entry: set par(first-line-indent: 0pt, leading: 0.42em)
+  show bibliography: set par(first-line-indent: 0pt, leading: 0.62em)
   set cite(style: "gb-7714-2015-numeric")
-  show cite: it => text(fill: blue, super(it))
+  show cite: it => text(fill: rgb("#0000ff"), super(it))
   set ref(supplement: none)
   body
 }
@@ -169,7 +187,7 @@
   hust-unnumbered([目#h(2em)录], outlined: false)
   context {
     set text(size: 14 * texpt)
-    set par(first-line-indent: 0pt, leading: 4pt, spacing: 0pt)
+    set par(first-line-indent: 0pt, leading: 0.12em, spacing: 0pt)
     for entry in query(heading.where(outlined: true)) {
       if entry.level <= 2 {
         let n = counter(heading).at(entry.location())
@@ -177,20 +195,27 @@
         let numbered = entry.numbering != none
         block(above: 5pt, below: 5pt)[
           #set text(font: if entry.level == 1 { hei } else { song }, weight: if entry.level == 1 { "bold" } else { "regular" })
-          #pad(left: if entry.level == 2 { 0.48em } else { 0em })[
-            #link(entry.location())[
-              #if numbered {
-                if app and entry.level == 1 { [附录~] }
-                numbering(entry.numbering, ..n)
-                h(1em)
-              }
-              #entry.body
-            ]
-            #if not numbered or app or entry.level == 2 {
-              box(width: 1fr, repeat[.])
-              let p = counter(page).at(entry.location()).first()
-              text(font: "Times New Roman", weight: "regular")[#if not numbered and p <= 2 { numbering("I", p) } else { [(#p)] }]
-            }
+          #let appendix-label = app and entry.level == 1
+          #let label-width = if not numbered { 0pt } else if appendix-label { 3.75em } else if entry.level == 2 { 2.76em } else { 1.76em }
+          #pad(left: if entry.level == 2 { 0.48em } else if numbered and not app { 0.34em } else { 0em })[
+            // Separate columns keep all wrapped title lines aligned.
+            #grid(columns: (label-width, 1fr), column-gutter: 0pt,
+              if numbered { link(entry.location())[
+                #if appendix-label { [附录~] }
+                #numbering(entry.numbering, ..n)
+              ] } else { [] },
+              [
+                #link(entry.location(), entry.body)
+                #if not numbered or app or entry.level == 2 {
+                  text(weight: "regular", box(width: 1fr, repeat[.]))
+                  let p = counter(page).at(entry.location()).first()
+                  let format = entry.location().page-numbering()
+                  let roman = format == "I"
+                  text(font: "Times New Roman", weight: if roman { "bold" } else { "regular" })[
+                    #if roman { numbering(format, p) } else { [(#numbering(format, p))] }
+                  ]
+                }
+              ])
           ]
         ]
       }

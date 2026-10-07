@@ -17,6 +17,7 @@ with tempfile.TemporaryDirectory(prefix='hust-typst-check-') as temporary:
         ('final', 'main.typ', ['--input', 'format=final']),
         ('examples', 'typst/examples.typ', []),
         ('format-regression', 'scripts/fixtures/format-regression.typ', []),
+        ('caption-regression', 'scripts/fixtures/caption-regression.typ', []),
     ]:
         pdf = Path(temporary)/(name+'.pdf')
         run('typst','compile','--root','.', '--font-path','font', *inputs, source, str(pdf))
@@ -58,6 +59,14 @@ with tempfile.TemporaryDirectory(prefix='hust-typst-check-') as temporary:
             assert len(body_lines) == 3
             ys = [float(line.attrib['yMin']) for line in body_lines]
             assert all(abs((ys[i+1] - ys[i]) - 23.5 * 72 / 72.27) < 0.01 for i in range(2)), 'Body baseline must match LaTeX 23.5 TeX pt'
+        if name == 'caption-regression':
+            xml = ET.fromstring(run('pdftotext', '-bbox-layout', str(pdf), '-'))
+            ns = {'x': 'http://www.w3.org/1999/xhtml'}
+            words = xml.findall('.//x:word', ns)
+            for prefix in ['图说明基线', '表说明基线']:
+                ys = [float(word.attrib['yMin']) for word in words if (word.text or '').startswith(prefix)]
+                assert len(ys) == 2, f'Missing caption fixture: {prefix}'
+                assert abs(ys[1] - ys[0] - 11 * 72 / 72.27) < 0.01, f'{prefix}: single caption baseline'
         outputs[name] = pages
         print(f'{name}: {pages} A4 pages, compilation without diagnostics')
     assert outputs['draft'] == outputs['final'], 'Draft/final pagination differs'

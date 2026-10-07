@@ -139,9 +139,12 @@
   // LaTeX intextsep = 0.7 baselineskip; belowcaptionskip = 12bp.
   show figure: set block(above: 0.7 * 23.5 * texpt, below: 12pt + 0.7 * 23.5 * texpt)
   show figure.caption: set text(size: 11 * texpt)
-  show figure.caption: set par(first-line-indent: 0pt)
+  show figure.caption: set par(first-line-indent: 0pt, leading: 0.12em)
   show figure.where(kind: table): set figure(supplement: [表])
   show figure.where(kind: table): set figure.caption(position: top)
+  // With a top caption, abovecaptionskip belongs outside the figure;
+  // belowcaptionskip is the internal caption-to-table gap.
+  show figure.where(kind: table): set block(above: 12pt + 0.7 * 23.5 * texpt, below: 0.7 * 23.5 * texpt)
   show figure.where(kind: "algorithm"): it => block(breakable: false, above: 8pt, below: 8pt)[
     #set par(first-line-indent: 0pt, leading: 3pt)
     #line(length: 100%, stroke: 0.8pt)

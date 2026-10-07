@@ -3,7 +3,7 @@
 #hust-chapter[公开发表的学术论文与硕士学位论文的关系]
 // Original longtable: fixed text columns, 6 TeX pt padding on each side,
 // 0.4 TeX pt rules and measured 23.5 TeX pt row pitch.
-#v(15.81pt, weak: false)
+#v(13.897pt, weak: false)
 #align(center)[
 #table(columns: (0.9cm + 12.4 * texpt, 2.8cm + 12.4 * texpt,
   2.4cm + 12.4 * texpt, 3cm + 12.4 * texpt, 4cm + 12.4 * texpt),

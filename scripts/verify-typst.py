@@ -18,6 +18,8 @@ with tempfile.TemporaryDirectory(prefix='hust-typst-check-') as temporary:
         ('examples', 'typst/examples.typ', []),
         ('format-regression', 'scripts/fixtures/format-regression.typ', []),
         ('caption-regression', 'scripts/fixtures/caption-regression.typ', []),
+        ('heading-spacing', 'scripts/fixtures/heading-spacing.typ', []),
+        ('heading-consecutive', 'scripts/fixtures/heading-consecutive.typ', []),
     ]:
         pdf = Path(temporary)/(name+'.pdf')
         run('typst','compile','--root','.', '--font-path','font', *inputs, source, str(pdf))
@@ -46,11 +48,13 @@ with tempfile.TemporaryDirectory(prefix='hust-typst-check-') as temporary:
             rendered_pages = xml.findall('.//x:page', ns)
             toc_lines = rendered_pages[4].findall('.//x:line', ns)
             # Continuation lines must start at LaTeX's title columns.
-            continuation = [line for line in toc_lines if 220 < float(line.attrib['yMin']) < 237]
+            start = next(i for i, line in enumerate(toc_lines) if '长章标题格式核验' in ''.join(line.itertext()))
+            continuation = toc_lines[start+1:start+3]
             expected = 2.8 / 2.54 * 72 + 2.1 * 14 * 72 / 72.27
             assert len(continuation) == 2
             assert all(abs(float(line.attrib['xMin']) - expected) < 0.05 for line in continuation), 'Wrapped chapter TOC alignment'
-            continuation = [line for line in toc_lines if 266 < float(line.attrib['yMin']) < 283]
+            start = next(i for i, line in enumerate(toc_lines) if '长节标题格式核验' in ''.join(line.itertext()))
+            continuation = toc_lines[start+1:start+3]
             expected = 2.8 / 2.54 * 72 + 3.24 * 14 * 72 / 72.27
             assert len(continuation) == 2
             assert all(abs(float(line.attrib['xMin']) - expected) < 0.05 for line in continuation), 'Wrapped section TOC alignment'
@@ -67,6 +71,25 @@ with tempfile.TemporaryDirectory(prefix='hust-typst-check-') as temporary:
                 ys = [float(word.attrib['yMin']) for word in words if (word.text or '').startswith(prefix)]
                 assert len(ys) == 2, f'Missing caption fixture: {prefix}'
                 assert abs(ys[1] - ys[0] - 11 * 72 / 72.27) < 0.01, f'{prefix}: single caption baseline'
+        if name in ('heading-spacing', 'heading-consecutive'):
+            xml = ET.fromstring(run('pdftotext', '-bbox-layout', str(pdf), '-'))
+            ns = {'x': 'http://www.w3.org/1999/xhtml'}
+            rendered_pages = xml.findall('.//x:page', ns)
+            expected = ([[142.471, 184.307, 213.517, 245.640, 271.213, 299.480, 333.412, 362.825],
+                         [142.471, 183.307], [150.971, 197.807]] if name == 'heading-spacing'
+                        else [[142.471, 180.105, 207.388, 230.176, 259.588]])
+            for page, reference in zip(rendered_pages, expected):
+                ys = [float(line.attrib['yMin']) for line in page.findall('.//x:line', ns)
+                      if 120 < float(line.attrib['yMin']) < 760]
+                # Poppler can emit the Latin number and Chinese title as
+                # separate lines despite sharing a visual baseline.
+                merged = []
+                for y in sorted(ys):
+                    if not merged or y - merged[-1] > 3.5:
+                        merged.append(y)
+                ys = merged
+                assert len(ys) == len(reference), (name, ys)
+                assert all(abs(actual - target) < 0.02 for actual, target in zip(ys, reference)), (name, ys)
         outputs[name] = pages
         print(f'{name}: {pages} A4 pages, compilation without diagnostics')
     assert outputs['draft'] == outputs['final'], 'Draft/final pagination differs'

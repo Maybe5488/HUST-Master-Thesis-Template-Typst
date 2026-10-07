@@ -58,12 +58,17 @@
     #place(top + center, dy: 6.14cm, text(font: "STZhongsong", size: 45 * texpt, tracking: 5pt)[硕士学位论文])
     #place(top + center, dy: 8.176cm, text(size: 15 * texpt)[( 学术型 #degree-checkbox(checked: not info.professional) #h(2em) 专业型 #degree-checkbox(checked: info.professional) )])
     #place(top + center, dy: 10.5cm)[
-      #set text(size: 28 * texpt)
+      // Cover thesis title: stronger local synthetic bold; preserve advances.
+      #set text(size: 28 * texpt, weight: "bold")
+      #show regex("[\\p{Han}、。，：；！？“”‘’（）《》【】]+"): it => text(
+        weight: "regular", stroke: (paint: black, thickness: 0.035 * 28pt), it)
       #set par(leading: 0.42em)
       #align(center, info.title)
     ]
     #place(top + center, dy: 16.33cm)[
-      #set text(size: 15 * texpt)
+      #set text(size: 15 * texpt, weight: "bold")
+      #show regex("[\\p{Han}、。，：；！？“”‘’（）《》【】]+"): it => text(
+        weight: "regular", stroke: (paint: black, thickness: 0.035 * 15pt), it)
       #grid(columns: (5em, 2em, auto), align: left, row-gutter: 20.23pt,
         [学位申请人], [：], [#info.author],
         [学 科 专 业], [：], [#info.subject],

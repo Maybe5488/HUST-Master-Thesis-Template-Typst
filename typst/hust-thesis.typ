@@ -98,6 +98,15 @@
     footer: hust-footer(final: final), footer-descent: 1.8cm - 14.55pt,
     numbering: "1")
   set heading(numbering: "1.1", supplement: none)
+  // Zero-size markers distinguish ordinary paragraphs from consecutive
+  // headings and blocks, which TeX treats differently after a heading.
+  show par: it => context {
+    if text.size == 12 * texpt and text.font != hei { metadata("hust-body-par") }
+    it
+  }
+  show list: it => [#metadata("hust-body-block")#it]
+  show enum: it => [#metadata("hust-body-block")#it]
+  show table: it => [#metadata("hust-body-block")#it]
   show heading: it => context {
     let level = it.level
     let size = (16, 14, 13, 12).at(calc.min(level - 1, 3)) * texpt
@@ -106,8 +115,16 @@
     let after = if level == 1 and appendix-mode.get() { 20pt }
       else if level == 1 and it.numbering == none { 14pt }
       else { (15, 7, 4, 6).at(calc.min(level - 1, 3)) * 1pt }
+    let siblings = query(selector(heading).or(metadata.where(value: "hust-body-par")).or(metadata.where(value: "hust-body-block")).or(figure))
+    let index = siblings.position(node => node.location() == it.location())
+    let previous = if index != none and index > 0 { siblings.at(index - 1) } else { none }
+    let next = if index != none and index + 1 < siblings.len() { siblings.at(index + 1) } else { none }
+    let consecutive = previous != none and previous.func() == heading
+    let paragraph-next = next != none and next.func() == metadata and next.value == "hust-body-par"
+    let baseline-before = if level == 1 { 0.12 * size } else { 0.62 * size }
+    let baseline-after = if paragraph-next { 12.94 * texpt } else { 0pt }
     block(width: 100%, above: 0pt, below: 0pt, sticky: true)[
-      #v(before, weak: false)
+      #v((if level > 1 and consecutive { 0pt } else { before }) + baseline-before, weak: false)
       #set text(font: hei, size: size, weight: if level <= 3 and not (level == 1 and appendix-mode.get()) { "bold" } else { "regular" })
       #set par(first-line-indent: 0pt, leading: if level == 1 { 0.12em } else { 0.62em })
       #let contents = context {
@@ -119,7 +136,7 @@
         it.body
       }
       #if level == 1 { align(center, contents) } else { contents }
-      #v(after, weak: false)
+      #v(after + baseline-after, weak: false)
     ]
   }
   // Chinese fonts bundled with the template have no bold face. Match XeCJK's
@@ -189,6 +206,7 @@
 #let hust-outline() = {
   hust-unnumbered([目#h(2em)录], outlined: false)
   context {
+    v(8.75 * texpt)
     set text(size: 14 * texpt)
     set par(first-line-indent: 0pt, leading: 0.12em, spacing: 0pt)
     for entry in query(heading.where(outlined: true)) {

@@ -1,7 +1,10 @@
 # 华中科技大学硕士学位论文（Typst）
 :rocket: LaTeX编译太慢,Word使用太麻烦
+
 :rocket: 参考了学校官方的word模板和一些开源的LaTeX和typst项目
+
 :rocket: 全程使用CodeX 6.1Sol-Medium 实现
+
 本项目保留论文编译所需的 Typst 源文件、插图、参考文献和字体，统一输出一份带红色页眉的 PDF。
 
 [查看最终论文 thesis.pdf](thesis.pdf)
